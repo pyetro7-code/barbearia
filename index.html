@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agende seu horário</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Work+Sans:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#0b0b0d;--ink:#f4efe3;--muted:#a9a396;--gold:#f0b94a;--card:#fcec9f;--card-ink:#1b1608;--card-mute:#6b6340;--panel:#f7f6f1;--panel-ink:#1b1b1b;--err:#f3d6da;--err-ink:#5a1520;--blue:#6fa0ff}
+@media (prefers-color-scheme:light){:root{--bg:#f4efe3;--ink:#1b1608;--muted:#6b6340;--gold:#8a5a00;--blue:#1d4fd1}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Work Sans",system-ui,sans-serif;line-height:1.45;text-align:center;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+main{max-width:520px;margin:0 auto;padding:28px 16px 56px}
+h1{font-family:Oswald,Impact,sans-serif;font-weight:500;font-size:2.2rem;margin:0 0 20px}
+h2{font-family:Oswald,sans-serif;font-weight:700;font-size:1.3rem;letter-spacing:.14em;color:var(--gold);margin:24px 0 12px;text-transform:uppercase}
+.step{display:none}.step.on{display:block}
+input{width:100%;font:inherit;font-size:1.05rem;padding:13px 14px;border-radius:10px;border:2px solid #fff;background:#fff;color:#1b1b1b;margin-bottom:10px}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.err{background:var(--err);color:var(--err-ink);border-radius:8px;padding:9px;margin:0 0 10px}
+.btns{display:flex;gap:10px;justify-content:center;margin-top:22px}
+.btn{font-family:Oswald,sans-serif;font-weight:500;font-size:1.1rem;border:0;border-radius:999px;padding:12px 28px;cursor:pointer;background:var(--gold);color:#1b1608}
+.btn.sec{background:transparent;color:var(--ink);border:2px solid var(--muted)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.pro,.svc{display:block;width:100%;text-align:left;border:0;border-radius:14px;background:var(--card);color:var(--card-ink);padding:14px 16px;margin-bottom:10px;cursor:pointer;font:inherit;border-left:6px solid var(--gold)}
+.pro{font-family:Oswald,sans-serif;font-size:1.25rem}
+.svc b{display:block;font-family:Oswald,sans-serif;font-size:1.15rem;letter-spacing:.04em;text-transform:uppercase}
+.svc small{display:block;color:var(--card-mute);font-weight:600}
+.sel{background:var(--gold);border-left-color:#fff}
+.cal{background:var(--panel);color:var(--panel-ink);border-radius:10px;padding:10px;max-width:380px;margin:0 auto}
+.cal-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-weight:600}
+.cal-h button{background:none;border:0;font-size:1.5rem;color:#2b5be0;cursor:pointer;padding:2px 12px}
+.cal-h button[disabled]{opacity:.25}
+.g{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.g .w{color:#2a9bd6;font-style:italic;font-size:.9rem;padding:4px 0}
+.g button{border:0;background:none;font:inherit;padding:9px 0;border-radius:8px;cursor:pointer;color:var(--panel-ink)}
+.g button.sun{background:#f6dede;color:#a01a1a;font-weight:600}
+.g button.on{background:#2b5be0;color:#fff;font-weight:600}
+.g button[disabled]{color:#b9b9b9;cursor:not-allowed}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.slots button{border:0;border-radius:4px;background:var(--card);color:var(--card-ink);font-family:Oswald,sans-serif;font-weight:700;font-size:1.1rem;padding:16px 0;cursor:pointer}
+.slots button.on{background:var(--gold);outline:3px solid #fff}
+.hint{color:var(--gold);margin:14px 0 4px}
+.sum{background:var(--card);color:var(--card-ink);border-radius:14px;padding:16px;text-align:left;border-left:6px solid var(--gold)}
+.sum p{margin:4px 0}
+.link{display:inline-block;margin-top:14px;color:var(--gold);font-weight:600}
+.info{margin-top:36px;border-top:1px solid var(--muted);padding-top:16px;color:var(--muted);font-size:.95rem}
+</style>
+</head>
+<body>
+<main>
+<h1 id="shop"></h1>
+<p class="err" id="eload" hidden></p>
+
+<section class="step on" id="s1">
+<h2>Identificação</h2>
+<input id="nome" placeholder="Seu nome" autocomplete="given-name" aria-label="Seu nome" maxlength="80">
+<input id="tel" type="tel" placeholder="(31) 99999-9999" autocomplete="tel-national" inputmode="numeric" aria-label="Telefone com DDD">
+<p class="err" id="e1" hidden></p>
+<div class="btns"><button class="btn" id="n1">Próximo</button></div>
+</section>
+
+<section class="step" id="s2">
+<h2>Profissional</h2><div id="pros"></div>
+<h2>Serviço</h2><div id="svcs"></div>
+<div class="btns"><button class="btn sec" data-back="s1">Voltar</button><button class="btn" id="n2" disabled>Próximo</button></div>
+</section>
+
+<section class="step" id="s3">
+<h2>Data</h2>
+<div class="cal"><div class="cal-h"><button id="prev" aria-label="Mês anterior">‹</button><span id="mes"></span><button id="next" aria-label="Próximo mês">›</button></div><div class="g" id="g"></div></div>
+<p class="hint" id="hint">Selecione um dia</p>
+<div class="slots" id="slots"></div>
+<div class="btns"><button class="btn sec" data-back="s2">Voltar</button><button class="btn" id="n3" disabled>Próximo</button></div>
+</section>
+
+<section class="step" id="s4">
+<h2>Confirmar</h2>
+<div class="sum" id="sum"></div>
+<p class="err" id="e4" hidden></p>
+<div class="btns"><button class="btn sec" data-back="s3">Voltar</button><button class="btn" id="go">Confirmar agendamento</button></div>
+</section>
+
+<section class="step" id="s5">
+<h2>Agendado!</h2>
+<div class="sum" id="done"></div>
+<a class="link" id="cl" target="_blank" rel="noopener">Salvar na agenda do celular</a>
+<p><a class="link" id="wa" target="_blank" rel="noopener">Falar com a barbearia</a></p>
+<p class="info">Para cancelar ou remarcar, fale com a barbearia pelo WhatsApp.</p>
+</section>
+
+<div class="info" id="info"></div>
+</main>
+<script>
+// CONFIGURAÇÃO: troque pelos dados da barbearia
+var SB_URL="https://cqdejtuvbdswkncsdoii.supabase.co",SB_KEY="sb_publishable_JeXNEr9n1M7Pl4aWwrndzA_BvZXCcBq";
+var C={nome:"Barbearia Exemplo",whatsapp:"5531900000000",endereco:"Rua Exemplo, 100, Ipatinga – MG",instagram:"",
+horarioTxt:"Segunda a sábado, das 9h às 18h (pausa das 12h às 14h). Domingo fechado.",
+abre:540,fecha:1080,almoco:[720,840],passo:15};
+var sb=supabase.createClient(SB_URL,SB_KEY);
+var DS=["dom","seg","ter","qua","qui","sex","sáb"],MS=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+var P=[],V=[],occ=[],S={p:null,s:null,d:null,h:null},hoje=new Date(),vis=new Date(hoje.getFullYear(),hoje.getMonth(),1);
+var $=function(i){return document.getElementById(i)};
+function pad(n){return String(n).padStart(2,"0")}
+function hm(m){return pad(Math.floor(m/60))+":"+pad(m%60)}
+function ymd(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function at(d,m){return new Date(ymd(d)+"T"+hm(m)+":00-03:00")}
+function show(id){document.querySelectorAll(".step").forEach(function(e){e.classList.toggle("on",e.id===id)});$("info").style.display=id==="s5"?"none":"";window.scrollTo(0,0)}
+function msg(id,t){var e=$(id);e.hidden=!t;e.textContent=t||""}
+document.title=C.nome+" | Agendamento";$("shop").textContent=C.nome;
+document.querySelectorAll("[data-back]").forEach(function(b){b.addEventListener("click",function(){show(b.dataset.back)})});
+function mark(id,b){$(id).querySelectorAll("button").forEach(function(x){x.classList.toggle("sel",x===b)})}
+try{var u=JSON.parse(localStorage.getItem("be_cli")||"null");if(u){$("nome").value=u.n||"";$("tel").value=u.t||""}}catch(e){}
+$("tel").addEventListener("input",function(e){var v=e.target.value.replace(/\D/g,"").slice(0,11),k=v.length>10?7:6,o=v;
+if(v.length>2)o="("+v.slice(0,2)+") "+v.slice(2,k)+(v.length>k?"-"+v.slice(k):"");e.target.value=o});
+$("n1").addEventListener("click",function(){var n=$("nome").value.trim(),t=$("tel").value.replace(/\D/g,"");
+var m=n.length<2?"Informe seu nome.":t.length<10?"Informe um telefone válido com DDD.":"";msg("e1",m);if(!m)show("s2")});
+Promise.all([sb.from("barbeiros").select("id,nome").eq("ativo",true).order("nome"),sb.from("servicos").select("id,nome,preco,minutos").eq("ativo",true).order("preco")]).then(function(r){
+if(r[0].error||r[1].error)throw 1;P=r[0].data;V=r[1].data;
+P.forEach(function(p,i){var b=document.createElement("button");b.className="pro";b.textContent=p.nome;b.addEventListener("click",function(){S.p=i;S.h=null;mark("pros",b);chk2()});$("pros").appendChild(b)});
+V.forEach(function(s,i){var b=document.createElement("button");b.className="svc";b.innerHTML="<b></b><small>Valor: R$ "+Number(s.preco).toFixed(2)+"</small><small>Tempo: "+hm(s.minutos)+"</small>";b.firstChild.textContent=s.nome;
+b.addEventListener("click",function(){S.s=i;S.h=null;mark("svcs",b);chk2()});$("svcs").appendChild(b)})
+}).catch(function(){msg("eload","Não foi possível carregar os horários. Atualize a página ou fale com a barbearia pelo WhatsApp.")});
+function chk2(){$("n2").disabled=S.p===null||S.s===null}
+$("n2").addEventListener("click",function(){S.d=null;S.h=null;cal();slots();show("s3")});
+function cal(){var g=$("g");g.innerHTML="";$("mes").textContent=MS[vis.getMonth()]+" "+vis.getFullYear();
+$("prev").disabled=vis.getFullYear()===hoje.getFullYear()&&vis.getMonth()===hoje.getMonth();
+DS.forEach(function(d){var w=document.createElement("div");w.className="w";w.textContent=d;g.appendChild(w)});
+var ini=new Date(vis.getFullYear(),vis.getMonth(),1).getDay(),n=new Date(vis.getFullYear(),vis.getMonth()+1,0).getDate(),h0=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate());
+for(var i=0;i<ini;i++)g.appendChild(document.createElement("div"));
+for(var d=1;d<=n;d++)(function(d){var dt=new Date(vis.getFullYear(),vis.getMonth(),d),b=document.createElement("button");b.textContent=d;
+if(dt<h0||dt.getDay()===0){b.disabled=true;if(dt.getDay()===0)b.classList.add("sun")}
+if(S.d&&+S.d===+dt)b.classList.add("on");
+b.addEventListener("click",function(){S.d=dt;S.h=null;loadDay()});g.appendChild(b)})(d)}
+$("prev").addEventListener("click",function(){vis=new Date(vis.getFullYear(),vis.getMonth()-1,1);cal()});
+$("next").addEventListener("click",function(){vis=new Date(vis.getFullYear(),vis.getMonth()+1,1);cal()});
+function loadDay(){cal();$("slots").innerHTML="";$("n3").disabled=true;$("hint").textContent="Carregando horários...";
+var d=S.d;sb.rpc("horarios_ocupados",{dia:ymd(d)}).then(function(r){
+if(+S.d!==+d)return;if(r.error){occ=[];$("hint").textContent="Erro ao carregar horários. Tente de novo.";return}
+occ=r.data||[];slots()})}
+function slots(){var b=$("slots");b.innerHTML="";$("n3").disabled=true;if(!S.d)return;
+var du=V[S.s].minutos,pid=P[S.p].id,now=new Date(),n=0,mine=occ.filter(function(o){return o.barbeiro_id===pid});
+for(var m=C.abre;m+du<=C.fecha;m+=C.passo){
+if(m<C.almoco[1]&&m+du>C.almoco[0])continue;
+var a=at(S.d,m),z=new Date(a.getTime()+du*60000);if(a<=now)continue;
+if(mine.some(function(o){return new Date(o.inicio)<z&&new Date(o.fim)>a}))continue;
+var x=document.createElement("button");x.textContent=hm(m);if(S.h===m)x.className="on";
+x.addEventListener("click",function(m){return function(){S.h=m;slots();$("n3").disabled=false}}(m));b.appendChild(x);n++}
+$("hint").textContent=n?"Selecione um horário":"Sem horários neste dia. Escolha outro.";if(S.h!==null)$("n3").disabled=false}
+function dataTxt(){return DS[S.d.getDay()]+", "+S.d.getDate()+"/"+(S.d.getMonth()+1)+" às "+hm(S.h)}
+function sumHtml(el){var s=V[S.s];el.innerHTML="<p><b>Profissional:</b> <span></span></p><p><b>Serviço:</b> <span></span></p><p><b>Quando:</b> <span></span></p><p><b>Valor:</b> R$ "+Number(s.preco).toFixed(2)+"</p>";
+var sp=el.querySelectorAll("span");sp[0].textContent=P[S.p].nome;sp[1].textContent=s.nome;sp[2].textContent=dataTxt()}
+$("n3").addEventListener("click",function(){sumHtml($("sum"));msg("e4","");show("s4")});
+$("go").addEventListener("click",function(){var btn=$("go"),s=V[S.s];btn.disabled=true;msg("e4","");
+var nome=$("nome").value.trim(),tel=$("tel").value.replace(/\D/g,"");
+sb.rpc("agendar",{p_barbeiro:P[S.p].id,p_servico:s.id,p_inicio:at(S.d,S.h).toISOString(),p_nome:nome,p_telefone:tel}).then(function(r){
+btn.disabled=false;
+if(r.error){var c=r.error.code||"",t=r.error.message||"";
+if(c==="23P01"||/bloqueado/i.test(t)){msg("e4","Esse horário acabou de ser ocupado. Volte e escolha outro.");S.h=null;loadDay()}
+else msg("e4","Não foi possível agendar. Tente de novo ou fale com a barbearia pelo WhatsApp.");return}
+try{localStorage.setItem("be_cli",JSON.stringify({n:nome,t:$("tel").value}))}catch(e){}
+sumHtml($("done"));
+var a=at(S.d,S.h),z=new Date(a.getTime()+s.minutos*60000),f=function(d){return d.toISOString().replace(/[-:]|\.\d{3}/g,"")};
+$("cl").href="https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(s.nome+" - "+C.nome)+"&dates="+f(a)+"/"+f(z)+"&location="+encodeURIComponent(C.endereco);
+$("wa").href="https://wa.me/"+C.whatsapp+"?text="+encodeURIComponent("Olá! Sou "+nome+". Agendei "+s.nome+" para "+dataTxt()+".");
+show("s5")})});
+(function(){var i=$("info");function p(t){var e=document.createElement("p");e.textContent=t;i.appendChild(e)}
+p(C.horarioTxt);p(C.endereco);
+function a(h,t){var x=document.createElement("a");x.href=h;x.target="_blank";x.rel="noopener";x.className="link";x.style.margin="0 12px 0 0";x.textContent=t;i.appendChild(x)}
+a("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(C.endereco),"Como chegar");
+a("https://wa.me/"+C.whatsapp,"WhatsApp");if(C.instagram)a("https://instagram.com/"+C.instagram,"Instagram")})();
+</script>
+</body>
+</html>
